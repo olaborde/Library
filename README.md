@@ -17,7 +17,7 @@ These instructions will guide you through setting up and running the project on 
 Clone the repository to your local machine:
 
 ```bash
-git clone [https://yourrepository.git](https://github.com/olaborde/Library.git)
+git clone https://github.com/olaborde/Library.git
 cd Library
 
 
