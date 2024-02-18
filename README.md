@@ -17,8 +17,8 @@ These instructions will guide you through setting up and running the project on 
 Clone the repository to your local machine:
 
 ```bash
-git clone https://yourrepository.git
-cd yourrepository
+git clone [https://yourrepository.git](https://github.com/olaborde/Library.git)
+cd Library
 
 
 macOS/Linux:
@@ -34,6 +34,7 @@ python -m venv venv
 pip install -r requirements.txt
 
 flask run
+Or
 python app.py
 
 
