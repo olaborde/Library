@@ -1,4 +1,6 @@
 from extensions import db
+from sqlalchemy.inspection import inspect
+
 
 class Author(db.Model):
     __tablename__ = 'Authors'
@@ -6,7 +8,15 @@ class Author(db.Model):
     FirstName = db.Column(db.String(255), nullable=False)
     LastName = db.Column(db.String(255), nullable=False)
     Biography = db.Column(db.Text)
-    books = db.relationship('Book', backref='author', lazy=True)
+    books = db.relationship('Book', backref='author_backref', lazy='dynamic')
+
+    def to_dict(self, include_relationships=False):
+        data = {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
+        
+        if include_relationships:
+            for relationship in inspect(self).mapper.relationships:
+                data[relationship.key] = [item.to_dict() for item in getattr(self, relationship.key)]
+        return data
 
 class Publisher(db.Model):
     __tablename__ = 'Publishers'
@@ -28,7 +38,7 @@ class Book(db.Model):
     Name = db.Column(db.String(255), nullable=False)
     Description = db.Column(db.Text)
     Price = db.Column(db.Numeric(10, 2))
-    AuthorID = db.Column(db.BigInteger, db.ForeignKey('Authors.AuthorID'), nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey('authors.id'))
     Genre = db.Column(db.String(255))
     PublisherID = db.Column(db.BigInteger, db.ForeignKey('Publishers.PublisherID'), nullable=False)
     YearPublished = db.Column(db.Integer)

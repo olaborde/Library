@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 # from models import db, Author, Book, Publisher, User, UserCreditCards, ShoppingCart, CartItems, BookRatings, BookComments, WishLists, WishListItems
 from extensions import db
+from sqlalchemy import inspect
 from config import Config
 
 app = Flask(__name__)
@@ -9,8 +10,15 @@ app.config.from_object(Config)
 db.init_app(app)
 
 with app.app_context():
-    from models import Author, Book, Publisher, User, UserCreditCards, ShoppingCart, CartItems, BookRatings, BookComments, WishLists, WishListItems
+    from models_old import Author, Book, Publisher, User, UserCreditCards, ShoppingCart, CartItems, BookRatings, BookComments, WishLists, WishListItems
     db.create_all()
+
+def model_to_dict(model_instance):
+    """
+    Converts a SQLAlchemy model instance into a dictionary by iterating over its columns.
+    """
+    return {c.key: getattr(model_instance, c.key)
+            for c in inspect(model_instance.__class__).mapper.column_attrs}
 
 
 @app.route('/')
@@ -30,13 +38,14 @@ def add_author():
 @app.route('/authors', methods=['GET'])
 def get_authors():
     authors = Author.query.all()
-    return jsonify([author.to_dict() for author in authors]), 200
+    authors_list = [model_to_dict(author) for author in authors]
+    return jsonify(authors_list), 200
 
 # Get a single author by ID
 @app.route('/authors/<int:author_id>', methods=['GET'])
 def get_author(author_id):
     author = Author.query.get_or_404(author_id)
-    return jsonify(author.to_dict()), 200
+    return jsonify(model_to_dict(author)), 200
 
 # Update an author
 @app.route('/authors/<int:author_id>', methods=['PUT'])
@@ -77,12 +86,12 @@ def add_book():
         return jsonify(new_book), 201
     elif request.method == 'GET':
         books = Book.query.all()
-    return jsonify([book.to_dict() for book in books])
+    return jsonify([model_to_dict(book) for book in books])
 
 @app.route('/books/<int:book_id>', methods=['GET'])
 def get_book(book_id):
     book = Book.query.get_or_404(book_id)
-    return jsonify(book.to_dict())
+    return jsonify(model_to_dict(book))
 
 @app.route('/books/<int:book_id>', methods=['PUT'])
 def update_book(book_id):
@@ -98,7 +107,7 @@ def update_book(book_id):
     book.YearPublished = data.get('YearPublished', book.YearPublished)
     book.CopiesSold = data.get('CopiesSold', book.CopiesSold)
     db.session.commit()
-    return jsonify(book.to_dict())
+    return jsonify(model_to_dict(book))
 
 @app.route('/books/<int:book_id>', methods=['DELETE'])
 def delete_book(book_id):
@@ -106,23 +115,6 @@ def delete_book(book_id):
     db.session.delete(book)
     db.session.commit()
     return jsonify({'message': 'Book deleted successfully'}), 200
-
-
-def to_dict(self):
-    return {
-        'BookID': self.BookID,
-        'ISBN': self.ISBN,
-        'Name': self.Name,
-        'Description': self.Description,
-        'Price': self.Price,
-        'AuthorID': self.AuthorID,
-        'Genre': self.Genre,
-        'PublisherID': self.PublisherID,
-        'YearPublished': self.YearPublished,
-        'CopiesSold': self.CopiesSold
-    }
-
-Book.to_dict = to_dict
 
 @app.route('/publishers', methods=['POST'])
 def create_publisher():
@@ -134,17 +126,17 @@ def create_publisher():
     )
     db.session.add(new_publisher)
     db.session.commit()
-    return jsonify(new_publisher.to_dict()), 201
+    return jsonify(model_to_dict(new_publisher)), 201
 
 @app.route('/publishers', methods=['GET'])
 def get_publishers():
     publishers = Publisher.query.all()
-    return jsonify([publisher.to_dict() for publisher in publishers])
+    return jsonify([model_to_dict(publisher) for publisher in publishers])
 
 @app.route('/publishers/<int:publisher_id>', methods=['GET'])
 def get_publisher(publisher_id):
     publisher = Publisher.query.get_or_404(publisher_id)
-    return jsonify(publisher.to_dict())
+    return jsonify(model_to_dict(publisher))
 
 @app.route('/publishers/<int:publisher_id>', methods=['PUT'])
 def update_publisher(publisher_id):
@@ -154,7 +146,7 @@ def update_publisher(publisher_id):
     publisher.Address = data.get('Address', publisher.Address)
     publisher.Phone = data.get('Phone', publisher.Phone)
     db.session.commit()
-    return jsonify(publisher.to_dict())
+    return jsonify(model_to_dict(publisher))
 
 @app.route('/publishers/<int:publisher_id>', methods=['DELETE'])
 def delete_publisher(publisher_id):
@@ -162,17 +154,6 @@ def delete_publisher(publisher_id):
     db.session.delete(publisher)
     db.session.commit()
     return jsonify({'message': 'Publisher deleted successfully'}), 200
-
-def to_dict(self):
-    return {
-        'PublisherID': self.PublisherID,
-        'Name': self.Name,
-        'Address': self.Address,
-        'Phone': self.Phone
-    }
-
-Publisher.to_dict = to_dict
-
 
 
 if __name__ == '__main__':
