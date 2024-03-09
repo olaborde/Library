@@ -4,21 +4,30 @@ from flask_mysqldb import MySQL
 app = Flask(__name__)
 
 # MySQL configuration
-app.config['MYSQL_HOST'] = 'your_mysql_host'
-app.config['MYSQL_USER'] = 'your_mysql_user'
-app.config['MYSQL_PASSWORD'] = 'your_mysql_password'
-app.config['MYSQL_DB'] = 'your_mysql_database'
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = 'root'
+app.config['MYSQL_DB'] = 'bookstore'
 
 mysql = MySQL(app)
+
 
 # Route to get the subtotal of books in the user's shopping cart
 @app.route('/api/shopping-cart/subtotal', methods=['GET'])
 def get_subtotal():
     try:
         # Get user ID from the request parameters
-        user_id = int(request.args.get('userId'))
+        user_id_str = request.args.get('userId')
+
+        # Check if user_id_str is not None
+        if user_id_str is not None:
+           user_id = int(user_id_str)
+        else:
+            return jsonify({"error": "User ID is missing"}), 400
     except ValueError:
         return jsonify({"error": "Invalid User ID"}), 400
+    except OverflowError:
+        return jsonify({"error": "User ID is too large"}), 400
 
     # Query to calculate the subtotal of books in the user's shopping cart
     query = """
@@ -37,10 +46,11 @@ def get_subtotal():
     """
 
     try:
+
         # Execute the query
-        cursor = mysql.connection.cursor()
-        cursor.execute(query, (user_id,))
-        result = cursor.fetchone()
+        with mysql.connection.cursor() as cursor:
+            cursor.execute(query, (user_id,))
+            result = cursor.fetchone()
 
         if result:
             # Return the response with the calculated subtotal
@@ -51,8 +61,8 @@ def get_subtotal():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-    finally:
-        cursor.close()
+    #finally:
+      #  cursor.close()
 
 if __name__ == '__main__':
     app.run(debug=True)
