@@ -104,6 +104,24 @@ def get_books_by_author(author_id):
         return jsonify(books)
     else:
         return jsonify({"message": "No books found for the given author"}), 404
+      
+# Route to Create Author
+@app.route('/create_author', methods=['POST'])
+def create_author():
+    data = request.json
+    conn = mysql.connector.connect(**config)
+    cursor = conn.cursor()
+    query = """
+    INSERT INTO Authors (FirstName, LastName, Biography)
+    VALUES (%s, %s, %s)
+    """
+    cursor.execute(query, (data['FirstName'], data['LastName'], data['Biography']))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Author created successfully"}), 201
+
+#Route To Create Book
 
 # Run the Flask application
 if __name__ == '__main__':
