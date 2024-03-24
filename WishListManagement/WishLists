@@ -1,0 +1,54 @@
+from flask import Flask, jsonify, request
+from flask_sqlalchemy import SQLAlchemy
+
+app = Flask(__name__)
+
+app.config['SQLALCHEMY_DATABASE_URI' ] = 'mysql://root:Ilovecats123.@localhost:3306/library'
+app.config['SQLALCHEMY_TRACK MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+class WishLists(db.Model):
+    __tablename__ = 'wishlists'
+    WishListID = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    UserID = db.Column(db.Integer, primary_key=True)
+    Name = db.Column(db.String(100),unique=True, nullable = False)
+
+class WishListItems(db.Model):
+    __tablename__ = 'wishlistitems'
+    WishListItemID = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    WishListID = db.Column(db.BigInteger, db.ForeignKey('WishLists.WishListID'), nullable=False)
+    BookID = db.Column(db.BigInteger, db.ForeignKey('Books.BookID'), nullable=False)
+
+# Create a new wishlist
+@app.route('/wishlists',methods=['POST'])
+def create_wishlist():
+    wishlist = WishLists (UserID=request.json['UserID'], Name=request.json['Name'])
+    db.session.add(wishlist)
+    db.session.commit()
+    return jsonify({'message': 'WishList created successfully'}), 601
+
+# Add a book from a wishlist
+@app.route('/wishlistitems',methods=['POST'])
+def add_wishlist_book():
+            wishlistbook = WishListItems(WishListID=request.json['WishListID'], BookID=request.json['Name'])
+            db.session.add(wishlistbook) 
+            db.session.commit()
+            return jsonify({'message': 'Book added to wishlist successfully'}), 602
+    
+
+# Remove a book from a wishlist
+@app.route('/wishlistitems',methods=['DELETE'])
+def remove_wishlist_book():
+            wishlistbook = WishListItems(WishListID=request.json['WishListID'], BookID=request.json['Name'])
+            db.session.delete(wishlistbook) 
+            db.session.commit()
+            return jsonify({'message': 'Book removed from wishlist successfully'}), 602
+
+# List books from a wishlist
+@app.route('/wishlistitems',methods=['GET'])
+def list_wishlist_book():
+    WishListItems
+
+if __name__=='__main__':
+    app.run(debug=True)
