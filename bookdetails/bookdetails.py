@@ -123,6 +123,26 @@ def create_author():
 
 #Route To Create Book
 
+# Route to Create Book
+@app.route('/create_book', methods=['POST'])
+def create_book():
+    data = request.json
+    conn = mysql.connector.connect(**config)
+
+    cursor = conn.cursor()
+    query = """
+        INSERT INTO books (ISBN, Name, Description, Price, Genre, AuthorID, PublisherID, YearPublished, CopiesSold)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+    cursor.execute(query, (
+            data['ISBN'], data['Name'], data['Description'], data['Price'], data['Genre'],
+            data['AuthorID'], data['PublisherID'], data['YearPublished'], data['CopiesSold']
+        ))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Book added successfully!"}), 201
+
 # Run the Flask application
 if __name__ == '__main__':
     app.run(debug=True) # Start the Flask application in debug mode
