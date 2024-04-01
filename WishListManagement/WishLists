@@ -47,8 +47,14 @@ def remove_wishlist_book():
 
 # List books from a wishlist
 @app.route('/wishlistitems',methods=['GET'])
-def list_wishlist_book():
-    WishListItems
 
+def list_wishlist_book():
+    wishlistbook = WishListItems(WishListID=request.json['WishListID'])
+    db.session.get(wishlistbook)
+    db.session.commit()
+    for book in wishlistbook:
+          print(jsonify(book))
+    return jsonify({'message': 'Book removed from wishlist successfully'}), 602
+        
 if __name__=='__main__':
     app.run(debug=True)
