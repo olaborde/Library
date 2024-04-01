@@ -50,17 +50,6 @@ def get_book_by_id(book_id):
     else:
         return jsonify({"message": "Book not found"}), 404
 
-# Route to get all isbns
-@app.route('/isbn/', methods=['GET'])
-def get_all_isbn():
-    conn = mysql.connector.connect(**config)
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT ISBN FROM Books") # Query to get all ISBN numbers
-    books = cursor.fetchall() # Extract ISBNs from the result rows
-    cursor.close()
-    conn.close()
-    return jsonify(books) # Return ISBN numbers as JSON
-
 # Route to get a book by ISBN
 @app.route('/books/isbn/<isbn>', methods=['GET']) #defines the API endpoint or the URL
 def get_book_by_isbn(isbn):
@@ -111,17 +100,30 @@ def create_author():
     data = request.json
     conn = mysql.connector.connect(**config)
     cursor = conn.cursor()
-    query = """
+
+    # Insert into Authors table
+    query_authors = """
     INSERT INTO Authors (FirstName, LastName, Biography)
     VALUES (%s, %s, %s)
     """
-    cursor.execute(query, (data['FirstName'], data['LastName'], data['Biography']))
+    cursor.execute(query_authors, (data['FirstName'], data['LastName'], data['Biography']))
     conn.commit()
+
+    # Retrieve the last inserted id
+    author_id = cursor.lastrowid
+
+    query_author_publisher = """
+    INSERT INTO AuthorPublisher (AuthorID, PublisherID)
+    VALUES (%s, %s)
+    """
+    cursor.execute(query_author_publisher, (author_id, data['PublisherID']))
+    conn.commit()
+
+    # Clean up the cursor and connection
     cursor.close()
     conn.close()
-    return jsonify({"message": "Author created successfully"}), 201
 
-#Route To Create Book
+    return jsonify({"message": "Author and author-publisher link created successfully"}), 201
 
 # Route to Create Book
 @app.route('/create_book', methods=['POST'])
