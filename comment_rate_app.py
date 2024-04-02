@@ -67,6 +67,59 @@ def create_book_rating():
         # Handle exceptions (e.g., database errors)
         return jsonify({"error": str(e)}), 500
 
+# Route to create a comment for a book by a user
+@app.route('/comments/create', methods=['POST'])
+def create_book_comment():
+    # Extract data from the request
+    data = request.get_json()
+
+    # Check if all required parameters are present
+    if 'comment_id' not in data or 'book_id' or 'user_id' not in data or 'comment_text' not in data:
+        error = [
+            {
+                '400 error': 'missing parameters; usage is as follows:',
+                'book_id': 'INT',
+                'comment_id:': u'INT',
+                'user_id': u'INT',
+                'comment_text': u'STRING',
+            }
+        ]
+        return jsonify(error), 400
+
+    book_id = data['book_id']
+    comment_id = data['comment_id']
+    user_id = data['user_id']
+    comment_text = data['comment_text']
+
+    # Database connection and cursor
+    conn = mysql.connector.connect(**config)
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        # Prepare the query to insert a new rating
+        query = """
+            INSERT INTO BookComments (CommentID, BookID, UserID, Comments, DateStamp)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        # Get the current timestamp
+        date_stamp = datetime.now()
+
+        # Execute the query
+        cursor.execute(query, (comment_id, book_id, user_id, comment_text, date_stamp))
+
+        # Commit the changes to the database
+        conn.commit()
+
+        # Close the cursor and connection
+        cursor.close()
+        conn.close()
+
+        return jsonify({"message": "Comment created successfully"}), 201
+
+    except Exception as e:
+        # Handle exceptions (e.g., database errors)
+        return jsonify({"error": str(e)}), 500
+
 # Route to retrieve a list of comments for a particular book
 @app.route('/ratings/<int:book_id>', methods=['GET'])
 def get_ratings(book_id):
