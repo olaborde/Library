@@ -125,6 +125,26 @@ def create_author():
 
     return jsonify({"message": "Author and author-publisher link created successfully"}), 201
 
+# Route to Look Up Author By Last Name
+@app.route('/authors/<last_name>', methods=['GET'])
+def get_author_by_last_name(last_name):
+    conn = mysql.connector.connect(**config)
+    cursor = conn.cursor(dictionary=True)
+    query = """
+    SELECT a.authorID, a.firstname, a.lastname, a.biography, ap.publisherID
+    FROM Authors a
+    LEFT JOIN authorpublisher ap ON a.authorID = ap.authorID
+    WHERE a.lastname = %s
+    """
+    cursor.execute(query, (last_name,))
+    author_details = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    if author_details:
+        return jsonify(author_details)
+    else:
+        return jsonify({"error": "Author not found"}), 404
+
 # Route to Create Book
 @app.route('/create_book', methods=['POST'])
 def create_book():
