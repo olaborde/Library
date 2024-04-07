@@ -25,7 +25,7 @@ config = {
   'raise_on_warnings': True
 }
 
-# Route to get all books
+# Route To Get All Books
 @app.route('/books', methods=['GET'])
 def get_books():
     conn = mysql.connector.connect(**config)
@@ -36,7 +36,7 @@ def get_books():
     conn.close()
     return jsonify(books) # Return books as JSON
 
-# Route to get a specific book by ID
+# Route To Get A Specific Book By ID
 @app.route('/books/<int:book_id>', methods=['GET'])
 def get_book_by_id(book_id):
     conn = mysql.connector.connect(**config)
@@ -50,7 +50,7 @@ def get_book_by_id(book_id):
     else:
         return jsonify({"message": "Book not found"}), 404
 
-# Route to get a specific book by ISBN
+# Route To Get A Specific Book By ISBN
 @app.route('/books/isbn/<isbn>', methods=['GET']) #defines the API endpoint or the URL
 def get_book_by_isbn(isbn):
     conn = mysql.connector.connect(**config)
@@ -65,7 +65,7 @@ def get_book_by_isbn(isbn):
     else:
         return jsonify({"message": "Book not found"}), 404
 
-# Route to get all books by a specific author
+# Route To Get All Books By A Specific Author
 @app.route('/authors/<int:author_id>/books', methods=['GET'])
 def get_books_by_author(author_id):
     conn = mysql.connector.connect(**config)
@@ -83,14 +83,14 @@ def get_books_by_author(author_id):
     else:
         return jsonify({"message": "No books found for the given author"}), 404
 
-# Route to Create Author
+# Route To Create Author
 @app.route('/create_author', methods=['POST'])
 def create_author():
     data = request.json
     conn = mysql.connector.connect(**config)
     cursor = conn.cursor()
 
-    # Insert into Authors table
+    # Insert Into Authors Table
     query_authors = """
     INSERT INTO Authors (FirstName, LastName, Biography)
     VALUES (%s, %s, %s)
@@ -98,7 +98,7 @@ def create_author():
     cursor.execute(query_authors, (data['FirstName'], data['LastName'], data['Biography']))
     conn.commit()
 
-    # Retrieve the last inserted id
+    # Retrieve The Last Inserted ID
     author_id = cursor.lastrowid
 
     query_author_publisher = """
@@ -108,13 +108,13 @@ def create_author():
     cursor.execute(query_author_publisher, (author_id, data['PublisherID']))
     conn.commit()
 
-    # Clean up the cursor and connection
+    # Clean Up The Cursor And Connection
     cursor.close()
     conn.close()
 
     return jsonify({"message": "Author and author-publisher link created successfully"}), 201
 
-# Route to Look Up Author By Last Name
+# Route To Look Up Author By Last Name
 @app.route('/authors/<last_name>', methods=['GET'])
 def get_author_by_last_name(last_name):
     conn = mysql.connector.connect(**config)
@@ -134,7 +134,7 @@ def get_author_by_last_name(last_name):
     else:
         return jsonify({"error": "Author not found"}), 404
 
-# Route to Create Book
+# Route To Create Book
 @app.route('/create_book', methods=['POST'])
 def create_book():
     data = request.json
