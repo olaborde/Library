@@ -123,6 +123,62 @@ def get_book_name(book_id):
         cursor.execute(query, (book_id,))
         result = cursor.fetchone()
         return result[0] if result else None
+    
+  
+# Route to retrieve the list of books in the user's shopping cart
+@app.route('/api/shopping-cart/books', methods=['GET'])
+def get_cart_books():
+    try:
+        # Get user ID from the request parameters
+        user_id = request.args.get('userId')
+        
+        # Check if user ID is provided
+        if user_id is None:
+            return jsonify({"error": "User ID is missing"}), 400
+        
+        # Query to retrieve the list of books in the user's shopping cart
+        query = """
+            SELECT books.BookID, books.ISBN, books.Name, books.Description, books.Price, books.Genre, 
+                   cartitems.Quantity
+            FROM cartitems
+            JOIN books ON cartitems.BookID = books.BookID
+            JOIN shoppingcart ON cartitems.CartID = shoppingcart.CartID
+            WHERE shoppingcart.UserID = %s
+        """
+        
+        with mysql.connection.cursor() as cursor:
+            cursor.execute(query, (user_id,))
+            cart_books = cursor.fetchall()
+        
+        if cart_books:
+            return jsonify(cart_books), 200
+        else:
+            return jsonify({"message": "No books found in the user's shopping cart"}), 404
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+# Route to delete a book from the user's shopping cart
+@app.route('/api/shopping-cart/delete-book', methods=['DELETE'])
+def delete_book_from_cart():
+    try:
+        # Get user ID and book ID from the request parameters
+        user_id = request.args.get('userId')
+        book_id = request.args.get('bookId')
+
+        # Check if both user ID and book ID are provided
+        if user_id is None or book_id is None:
+            return jsonify({"error": "User ID or Book ID is missing"}), 400
+
+        # Execute SQL query to delete the book from the user's shopping cart
+        query = "DELETE FROM cartitems WHERE CartID = (SELECT CartID FROM shoppingcart WHERE UserID = %s) AND BookID = %s"
+        with mysql.connection.cursor() as cursor:
+            cursor.execute(query, (user_id, book_id))
+            mysql.connection.commit()
+
+        return jsonify({"success": "Book deleted from the shopping cart"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
