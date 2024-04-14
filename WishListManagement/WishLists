@@ -8,17 +8,20 @@ app.config['SQLALCHEMY_TRACK MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+
 class WishLists(db.Model):
     __tablename__ = 'wishlists'
-    WishListID = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    WishListID = db.Column(db.BigInteger, primary_key=True, autoincrement=True, nullable=False)
     UserID = db.Column(db.Integer, primary_key=True)
     Name = db.Column(db.String(100),unique=True, nullable = False)
+
 
 class WishListItems(db.Model):
     __tablename__ = 'wishlistitems'
     WishListItemID = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
-    WishListID = db.Column(db.BigInteger, db.ForeignKey('WishLists.WishListID'), nullable=False)
-    BookID = db.Column(db.BigInteger, db.ForeignKey('Books.BookID'), nullable=False)
+    WishListID = db.Column(db.BigInteger, nullable=False)
+    BookID = db.Column(db.BigInteger, nullable=False)
+
 
 # Create a new wishlist
 @app.route('/wishlists',methods=['POST'])
@@ -28,33 +31,68 @@ def create_wishlist():
     db.session.commit()
     return jsonify({'message': 'WishList created successfully'}), 601
 
-# Add a book from a wishlist
+# Delete a wishlist
+@app.route('/wishlists/<int:user_id>', methods=['DELETE'])
+def remove_wishlist(user_id):
+    wishlists = WishLists.query.filter_by(UserID=user_id).first()
+
+    if not wishlists:
+        return jsonify({'message': 'Wishlist not found'}), 602
+
+    db.session.delete(wishlists)
+    db.session.commit()
+
+    return jsonify({'message': 'wishlist deleted successfully'}), 601
+
+
+
+# Add a book to a wishlist
 @app.route('/wishlistitems',methods=['POST'])
 def add_wishlist_book():
-            wishlistbook = WishListItems(WishListID=request.json['WishListID'], BookID=request.json['Name'])
-            db.session.add(wishlistbook) 
-            db.session.commit()
-            return jsonify({'message': 'Book added to wishlist successfully'}), 602
-    
+    wishlistbook = WishListItems(WishListID=request.json['WishListID'], BookID=request.json['BookID'])
+    db.session.add(wishlistbook)
+    db.session.commit()
+    return jsonify({'message': 'Book added to wishlist successfully'}), 601
+   
 
 # Remove a book from a wishlist
-@app.route('/wishlistitems',methods=['DELETE'])
-def remove_wishlist_book():
-            wishlistbook = WishListItems(WishListID=request.json['WishListID'], BookID=request.json['Name'])
-            db.session.delete(wishlistbook) 
-            db.session.commit()
-            return jsonify({'message': 'Book removed from wishlist successfully'}), 602
+@app.route('/wishlistitems/<int:wishlist_id>/<int:book_id>', methods=['DELETE'])
+def remove_wishlist_book(wishlist_id, book_id):
+    wishlist_item = WishListItems.query.filter_by(WishListID=wishlist_id, BookID=book_id).first()
 
-# List books from a wishlist
-@app.route('/wishlistitems',methods=['GET'])
+    if not wishlist_item:
+        return jsonify({'message': 'Wishlist item not found'}), 602
 
-def list_wishlist_book():
-    wishlistbook = WishListItems(WishListID=request.json['WishListID'])
-    db.session.get(wishlistbook)
+    db.session.delete(wishlist_item)
     db.session.commit()
-    for book in wishlistbook:
-          print(jsonify(book))
-    return jsonify({'message': 'Book removed from wishlist successfully'}), 602
-        
-if __name__=='__main__':
+
+    return jsonify({'message': 'Book removed from wishlist successfully'}), 601
+
+
+
+@app.route('/wishlistitems/<int:wishlist_id>', methods=['GET'])
+def list_wishlist_books(wishlist_id):
+    wishlist_items = WishListItems.query.filter_by(WishListID=wishlist_id).all()
+
+    if not wishlist_items:
+        return jsonify({'message': 'No books found in the wishlist'}), 602
+
+    books_list = []
+    for item in wishlist_items:
+        book_info = {
+            'WishListItemID': item.WishListItemID,
+            'WishListID': item.WishListID,
+            'BookID': item.BookID
+            # Add more book details as needed (e.g., book title, author, etc.)
+        }
+        books_list.append(book_info)
+
+    return jsonify({'books': books_list}), 601
+
+
+if __name__ == '__main__':
     app.run(debug=True)
+
+
+
+
